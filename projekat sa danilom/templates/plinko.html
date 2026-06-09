@@ -1,0 +1,658 @@
+<!-- Premestite ovaj fajl u templates/plinko.html -->
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plinko Casino</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+<style>
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  background:#0b0b0f;
+  color:white;
+  font-family:Arial,sans-serif;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:10px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.nav-container {
+  position: fixed;
+  top: -65px;
+  left: 0;
+  width: 100%;
+  z-index: 1002;
+  transition: top 0.3s ease;
+}
+
+.nav-container.open {
+  top: 0;
+}
+
+.nav-bar {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  padding: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.menu-hint {
+  position: absolute;
+  bottom: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #facc15;
+  color: black;
+  padding: 2px 15px;
+  border-radius: 0 0 10px 10px;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.nav-bar .bonus-link {
+  background: #facc15;
+  color: #000 !important;
+  padding: 5px 12px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+.nav-bar a { color: white; text-decoration: none; font-weight: bold; opacity: 0.7; transition: 0.3s; }
+.nav-bar a:hover { opacity: 1; color: gold; }
+
+h1{margin: 35px 0 10px 0; font-size: 24px;}
+
+#ui{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:center;
+  margin-bottom:10px;
+}
+
+#balance{
+  color:#ffd700;
+  font-size:22px;
+  font-weight:bold;
+}
+
+input, .bet-btn-alt{
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  width:100px;
+  font-size:16px;
+  background: #1e1e26;
+  color: white;
+  border: 1px solid #ffd70033;
+}
+
+.main-content {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 1200px;
+  margin-top: 10px;
+  position: relative;
+}
+
+.side-panel {
+  position: fixed;
+  right: 20px;
+  top: 100px;
+  width: 300px;
+  z-index: 100;
+  background: rgba(15, 15, 20, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 10px;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.plinko-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 13px;
+}
+.history-table th, .history-table td { padding: 10px; text-align: center; border-bottom: 1px solid #334155; }
+.history-table th { background: #334155; color: #ffd700; font-size: 11px; }
+.win-text { color: #22c55e; }
+.loss-text { color: #ef4444; }
+
+@media (max-width: 1100px) {
+  .side-panel {
+    position: static;
+    width: 100%;
+    max-width: 500px;
+    margin-top: 20px;
+  }
+}
+
+button{
+  padding:10px 14px;
+  border:none;
+  border-radius:10px;
+  background:#ffd700;
+  color:black;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:hover{transform:scale(1.05);}
+
+#history{
+  display:flex;
+  gap:5px;
+  margin-top:10px;
+  min-height:30px;
+}
+.hist-item{
+  background:#1e1e26;
+  padding:4px 8px;
+  border-radius:5px;
+  font-size:12px;
+  color:#ffd700;
+  border:1px solid #ffd70033;
+}
+
+#game{
+  width:100%;
+  max-width:500px;
+  aspect-ratio: 500 / 600;
+  border-radius:20px;
+  overflow:hidden;
+  position:relative;
+  background: #0f172a;
+  margin: 0 auto;
+}
+
+canvas{
+  width: 100% !important;
+  height: 100% !important;
+  display:block;
+}
+
+.label{
+  position:absolute;
+  color:#ffd700;
+  font-weight:bold;
+  text-align:center;
+  transform: translateX(-50%);
+  pointer-events:none;
+  bottom: 5px; 
+  z-index: 10;
+  white-space: nowrap;
+}
+
+#autobtns{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-bottom:10px;
+}
+
+.popup{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+}
+.popup-box{
+  background:#1e1e26;
+  padding:30px;
+  border-radius:20px;
+  min-width:300px;
+  box-shadow:0 0 25px black;
+  border: 1px solid #ffd70033;
+}
+.hidden{ display:none; }
+</style>
+</head>
+
+<body>
+
+<div class="nav-container">
+  <div class="nav-bar">
+    <a href="/">🏠 Home</a>
+    <a href="/blackjack">🃏 Blackjack</a>
+    <a href="/rulet">🎡 Rulet</a>
+    <a href="/slot">🎰 Slot</a>
+    <a href="/plinko" style="opacity: 1; color: gold;">🎯 Plinko</a>
+    <a href="/snake">🐍 Zmija</a>
+    <a href="/profile">👤 Profil</a>
+    <a href="#" class="bonus-link" onclick="claimDailyBonus()">🎁 Bonus</a>
+  </div>
+  <div class="menu-hint" onclick="toggleNavMenu()">MENI ☰</div>
+</div>
+
+<h1>🎯 PLINKO</h1>
+
+<div id="ui">
+  <div id="balance">Balans: 1000€</div>
+  <input type="number" id="bet" value="10" min="1">
+  <button onclick="setMaxBet()" style="background:#333; color:gold;">MAX</button>
+  <button onclick="showAddMoneyModal()" style="background:#2563eb; color:white;">💵 Dodaj pare</button>
+  <select id="riskLevel" onchange="changeRisk()" style="padding:10px; border-radius:10px; background:#1e1e26; color:white; border:1px solid #ffd70033;">
+    <option value="low">Nizak rizik</option>
+    <option value="medium" selected>Srednji rizik</option>
+    <option value="high">Visok rizik</option>
+  </select>
+</div>
+
+<div id="autobtns">
+  <button onclick="dropBall()">IGRAJ</button>
+  <button onclick="startAuto(false)">AUTO</button>
+  <button onclick="startAuto(true)">TURBO ⚡</button>
+  <button onclick="stopAuto()">STOP ⛔</button>
+</div>
+
+<div class="main-content">
+    <div id="game"></div>
+
+    <div class="side-panel">
+        <div class="plinko-stats">
+            <div class="stat-item">
+                <div class="stat-label">Session Profit</div>
+                <div id="session-profit" class="stat-val">€0.00</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Odigrano</div>
+                <div id="session-games" class="stat-val">0</div>
+            </div>
+        </div>
+
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Ulog</th>
+                    <th>Množilac</th>
+                    <th>Isplata</th>
+                    <th>Neto</th>
+                </tr>
+            </thead>
+            <tbody id="plinko-history-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="history"></div>
+
+<div id="addMoneyPopup" class="popup hidden">
+    <div class="popup-box">
+        <div style="margin-bottom:16px; font-size:18px; text-align:center;">Koliko novca želiš da dodaš?</div>
+        <input id="addMoneyInput" type="number" min="1" step="10" value="500" style="width:100%; padding:10px 12px; font-size:16px; border-radius:12px; border:1px solid #ffd70033; background:#0f0f14; color:white; margin-bottom: 10px;" />
+        <div style="display:flex; justify-content:space-between; gap:10px; margin-top:18px;">
+            <button onclick="confirmAddMoney()" style="background:#16a34a; flex:1; color:white;">Potvrdi</button>
+            <button onclick="hideAddMoneyModal()" style="background:#6b7280; flex:1; color:white;">Otkaži</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const {Engine,Render,Runner,Bodies,World,Events} = Matter;
+
+let balance = Number('{{ current_user.balance | default(1000) }}');
+let auto = false;
+let turbo = false;
+let interval;
+let lastBalance = null;
+let sessionProfit = 0;
+let sessionGames = 0;
+let winHistory = [];
+
+const engine = Engine.create();
+const world = engine.world;
+
+const width = 500;
+const height = 600;
+
+// Matematički balansirano za realan Casino House Edge
+const riskMultipliers = {
+  low: [16, 9, 4.2, 2, 1.2, 1.1, 1, 0.5, 0.2, 0.5, 1, 1.1, 1.2, 2, 4.2, 9, 16],
+  medium: [110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 41, 110],
+  high: [1000, 130, 26, 9, 4, 0.2, 0.2, 0.1, 0.01, 0.1, 0.2, 0.2, 4, 9, 26, 130, 1000]
+};
+
+let multipliers = riskMultipliers.medium;
+
+const game = document.getElementById("game");
+
+const render = Render.create({
+  element: game,
+  engine,
+  options:{
+    width,
+    height,
+    wireframes:false,
+    background:"#0f0f14"
+  }
+});
+
+Render.run(render);
+Runner.run(Runner.create(), engine);
+
+// walls - Uklonjeni bočni zidovi, ostavljen samo pod
+World.add(world, [
+  Bodies.rectangle(width/2, height+20, width, 40, {isStatic:true})
+]);
+
+// pegs
+const slotWidthInternal = width / multipliers.length;
+for(let row=0; row<16; row++){
+  const cols = row + 3; // Row 0 ima 3 pina, Row 15 ima 18 pinova
+  const rowWidth = (cols - 1) * slotWidthInternal;
+
+  for(let col=0; col<cols; col++){
+    const x = width/2 - rowWidth/2 + col * slotWidthInternal;
+    World.add(world,
+      Bodies.circle(
+        x + (Math.random() * 1.2 - 0.6),
+        40 + row*33 + (Math.random() * 1.2 - 0.6),
+        3.5,
+        {isStatic:true, restitution:0.3, friction:0.01, label:'peg', render:{fillStyle:'#94a3b8'}}
+      )
+    );
+  }
+}
+
+// dividers
+for(let i=0; i<=multipliers.length; i++){
+  World.add(world,
+    Bodies.rectangle(
+      slotWidthInternal * i,
+      height - 30, 
+      2,
+      60, 
+      {isStatic:true, render: {fillStyle: '#1e293b'}}
+    )
+  );
+}
+
+// Peg collision effect
+Events.on(engine, 'collisionStart', (event) => {
+  event.pairs.forEach(pair => {
+    if (pair.bodyA.label === 'peg') flashPeg(pair.bodyA);
+    if (pair.bodyB.label === 'peg') flashPeg(pair.bodyB);
+  });
+});
+
+function flashPeg(peg) {
+  const originalColor = "#94a3b8";
+  peg.render.fillStyle = "#ffd700";
+  setTimeout(() => {
+    peg.render.fillStyle = originalColor;
+  }, 100);
+}
+
+// labels
+let labels = [];
+
+function createLabels() {
+  labels.forEach(l => l.el.remove());
+  labels = [];
+  for(let i=0; i<multipliers.length; i++){
+    const val = multipliers[i];
+    
+    // Stake šema boja: Centar je crven/narandžast, ivice su zelene/ljubičaste
+    let color = "#ff4d4d"; // Default crvena
+    if (val >= 1 && val < 5) color = "#ff9f43"; // Narandžasta
+    if (val >= 5 && val < 20) color = "#f1c40f"; // Žuta
+    if (val >= 20 && val < 100) color = "#2ecc71"; // Zelena
+    if (val >= 100) color = "#9b59b6"; // Ljubičasta
+
+    const el = document.createElement("div");
+    el.className = "label";
+    el.style.left = ((i + 0.5) / multipliers.length * 100) + "%";
+    el.innerHTML = `
+      <div style="background: ${color}; 
+                  border-bottom: 3px solid rgba(0,0,0,0.2);
+                  color: #000; 
+                  padding: 3px 1px; 
+                  border-radius: 4px; 
+                  font-size: 10px; 
+                  min-width: 28px; 
+                  font-weight: 900;
+                  box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+        ${val}x
+      </div>`;
+    game.appendChild(el);
+    labels.push({el, i});
+  }
+}
+
+function changeRisk() {
+  const level = document.getElementById("riskLevel").value;
+  multipliers = riskMultipliers[level];
+  createLabels();
+}
+
+createLabels();
+
+function animateValue(el, start, end, duration) {
+  let startTimestamp = null;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    const value = (progress * (end - start) + start).toFixed(2);
+    el.innerText = "Balans: €" + value;
+    if (progress < 1) {
+      window.requestAnimationFrame(step);
+    }
+  };
+  window.requestAnimationFrame(step);
+}
+
+// balance
+function updateBalance(gameName, amount){
+  const balEl = document.getElementById("balance");
+  if (lastBalance === null) {
+    balEl.innerText = "Balans: €" + balance.toFixed(2);
+    lastBalance = balance;
+  } else if (lastBalance !== balance) {
+    animateValue(balEl, lastBalance, balance, 400);
+    lastBalance = balance;
+  }
+  localStorage.setItem('casino_balance', balance);
+
+  const payload = { balance: balance };
+  if (gameName && amount !== undefined && amount !== 0) {
+      payload.game_name = gameName;
+      payload.amount = amount;
+  }
+
+  fetch('/update_balance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+  });
+}
+
+function setMaxBet(){
+  document.getElementById("bet").value = Math.floor(balance);
+}
+
+function claimDailyBonus() {
+  const now = Date.now();
+  const lastClaim = localStorage.getItem('last_bj_bonus');
+  const day = 24 * 60 * 60 * 1000;
+
+  if (!lastClaim || now - lastClaim > day) {
+    balance += 100;
+    localStorage.setItem('last_bj_bonus', now);
+    updateBalance();
+    alert("🎁 Preuzeli ste €100 dnevnog bonusa!");
+  } else {
+    const timeLeft = Math.ceil((day - (now - lastClaim)) / (1000 * 60 * 60));
+    alert(`Bonus je dostupan ponovo za ${timeLeft} sati.`);
+  }
+}
+
+function showAddMoneyModal(){
+  document.getElementById("addMoneyPopup").classList.remove("hidden");
+}
+
+function hideAddMoneyModal(){
+  document.getElementById("addMoneyPopup").classList.add("hidden");
+}
+
+function confirmAddMoney(){
+  const amount = Number(document.getElementById("addMoneyInput").value);
+  if(isNaN(amount) || amount <= 0) return;
+  balance += amount;
+  updateBalance('Depozit', amount);
+  hideAddMoneyModal();
+}
+
+function addToHistory(mult){
+  winHistory.unshift(mult + "x");
+  if(winHistory.length > 10) winHistory.pop();
+  
+  const histEl = document.getElementById("history");
+  histEl.innerHTML = winHistory.map(h => `<div class="hist-item">${h}</div>`).join('');
+}
+
+function updateSessionUI() {
+    const profitEl = document.getElementById('session-profit');
+    profitEl.innerText = (sessionProfit >= 0 ? "+" : "") + "€" + sessionProfit.toFixed(2);
+    profitEl.className = "stat-val " + (sessionProfit >= 0 ? "win-text" : "loss-text");
+    document.getElementById('session-games').innerText = sessionGames;
+}
+
+function addHistoryRow(bet, win, mult) {
+    const tbody = document.getElementById('plinko-history-body');
+    const net = win - bet;
+    const row = document.createElement('tr');
+    
+    row.innerHTML = `
+        <td>€${bet.toFixed(2)}</td>
+        <td>${mult}x</td>
+        <td class="${win > 0 ? 'win-text' : ''}">€${win.toFixed(2)}</td>
+        <td class="${net >= 0 ? 'win-text' : 'loss-text'}">${net >= 0 ? '+' : ''}€${net.toFixed(2)}</td>
+    `;
+    
+    tbody.prepend(row);
+    if (tbody.children.length > 10) tbody.removeChild(tbody.lastChild);
+}
+
+// DROP BALL
+function dropBall(){
+
+  const bet = Number(document.getElementById("bet").value);
+
+  if(bet <= 0) return;
+  if(bet > balance) return;
+
+  balance -= bet;
+  updateBalance();
+
+  const ball = Bodies.circle(
+    width/2 + (Math.random() * 6 - 3), 
+    5,
+    6, // Manja loptica (r=6) za preciznije kretanje kroz 16 redova
+    {restitution: 0.2, friction: 0.1, frictionAir: 0.06} 
+  );
+
+  World.add(world, ball);
+
+  const check = function(){
+
+    if(ball.position.y > height - 120){
+
+      const slotWidth = width / multipliers.length;
+      let win = 0;
+      let multiplier = 0;
+
+      // Provera da li je loptica unutar granica ekrana
+      if (ball.position.x >= 0 && ball.position.x <= width) {
+        const slot = Math.max(0, Math.min(multipliers.length - 1, Math.floor(ball.position.x / slotWidth)));
+        multiplier = multipliers[slot];
+        win = bet * multiplier;
+        addToHistory(multiplier);
+      }
+
+      balance += win;
+      
+      sessionProfit += (win - bet);
+      sessionGames++;
+      updateSessionUI();
+      addHistoryRow(bet, win, multiplier > 0 ? multiplier : "OUT");
+
+      updateBalance("Plinko", win - bet);
+
+      World.remove(world, ball);
+      Events.off(engine, "afterUpdate", check);
+
+      if(auto) scheduleNext();
+    }
+  };
+
+  Events.on(engine, "afterUpdate", check);
+}
+
+// AUTO SYSTEM
+function scheduleNext(){
+  if(!auto) return;
+
+  const delay = turbo ? 150 : 800;
+
+  clearTimeout(interval);
+  interval = setTimeout(() => {
+    dropBall();
+  }, delay);
+}
+
+function startAuto(isTurbo){
+  auto = true;
+  turbo = isTurbo;
+  dropBall();
+}
+
+window.addEventListener('storage', (e) => {
+  if (e.key === 'casino_balance') {
+    balance = Number(e.newValue);
+    updateBalance();
+  }
+});
+
+function stopAuto(){
+  auto = false;
+  clearTimeout(interval);
+}
+
+function toggleNavMenu() {
+    const navContainer = document.querySelector('.nav-container');
+    navContainer.classList.toggle('open');
+}
+
+updateBalance();
+</script>
+
+</body>
+</html>
