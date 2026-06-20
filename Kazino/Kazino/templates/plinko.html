@@ -247,7 +247,6 @@ canvas{
     <a href="/plinko" style="opacity: 1; color: gold;">🎯 Plinko</a>
     <a href="/snake">🐍 Zmija</a>
     <a href="/profile">👤 Profil</a>
-    <a href="#" class="bonus-link" onclick="claimDailyBonus()">🎁 Bonus</a>
   </div>
   <div class="menu-hint" onclick="toggleNavMenu()">MENI ☰</div>
 </div>
@@ -258,7 +257,6 @@ canvas{
   <div id="balance">Balans: 1000€</div>
   <input type="number" id="bet" value="10" min="1">
   <button onclick="setMaxBet()" style="background:#333; color:gold;">MAX</button>
-  <button onclick="showAddMoneyModal()" style="background:#2563eb; color:white;">💵 Dodaj pare</button>
   <select id="riskLevel" onchange="changeRisk()" style="padding:10px; border-radius:10px; background:#1e1e26; color:white; border:1px solid #ffd70033;">
     <option value="low">Nizak rizik</option>
     <option value="medium" selected>Srednji rizik</option>
@@ -583,7 +581,8 @@ function dropBall(){
 
   const check = function(){
 
-    if(ball.position.y > height - 120){
+    // Loptica se boduje tek kad padne do dna (u korpu sa množiocem), a ne među pinovima
+    if(ball.position.y > height - 30){
 
       const slotWidth = width / multipliers.length;
       let win = 0;

@@ -393,15 +393,15 @@ const WILD = "🌟";
 const SCATTER = "⭐";
 
 const paytable = {
-  "🍒": 0.2,   // Povrat samo 20% uloga
-  "🍋": 0.5,   // Povrat 50% uloga
-  "🔔": 1.5,   // Blagi profit
-  "🍀": 4.0,
-  "🔥": 10.0,
-  "💎": 30.0,
-  "7️⃣": 100.0,
-  "🌟": 10.0,  // Wild
-  "⭐": 50.0   // Scatter/Bonus
+  "🍒": 0.07,  // Najcesci simbol - vraca mali deo uloga
+  "🍋": 0.25,
+  "🔔": 0.6,
+  "🍀": 1.5,
+  "🔥": 4.0,
+  "💎": 10.0,
+  "7️⃣": 30.0,
+  "🌟": 4.0,   // Wild (zamenjuje druge simbole)
+  "⭐": 0.0    // Scatter - ne isplacuje liniju, sluzi za free spinove
 };
 
 const state = {
@@ -576,7 +576,7 @@ function animateValue(el, start, end, duration) {
     window.requestAnimationFrame(step);
 }
 
-let jackpot = Number(localStorage.getItem('casino_jackpot')) || 10542;
+let jackpot = Number(localStorage.getItem('casino_jackpot2')) || 1000;
 jackpotEl.textContent = Math.floor(jackpot);
 
 async function spin(){
@@ -599,11 +599,11 @@ async function spin(){
   }
 
   // Jackpot doprinos
-  jackpot += state.bet * 0.05;
-  localStorage.setItem('casino_jackpot', jackpot);
+  jackpot += state.bet * 0.02;
+  localStorage.setItem('casino_jackpot2', jackpot);
   jackpotEl.textContent = Math.floor(jackpot);
 
-  state.currentMultiplier = state.bonus ? 3 : 1;
+  state.currentMultiplier = state.bonus ? 2 : 1;
   updateMultDisplay();
   state.spinning = true;
 
@@ -642,12 +642,12 @@ async function spin(){
   let totalWin =
   await runCascade();
 
-  // Jackpot Win Chance (0.5%)
-  if (Math.random() < 0.005) {
+  // Jackpot Win Chance (0.03% - redak dogadjaj, ranije 0.5% i pun pool = ogroman visak)
+  if (Math.random() < 0.0003) {
       totalWin += Math.floor(jackpot);
       msg.textContent = "🔥 JACKPOT WON! 🔥";
-      jackpot = 1000;
-      localStorage.setItem('casino_jackpot', jackpot);
+      jackpot = 500;
+      localStorage.setItem('casino_jackpot2', jackpot);
       jackpotEl.textContent = jackpot;
   }
 
@@ -669,11 +669,11 @@ async function spin(){
 
     updateBalance();
 
-    // Provera za Scattere (besplatni spinovi)
+    // Provera za Scattere (besplatni spinovi) - sada zaista BESPLATNO i redje (5+ scattera)
     let scatterCount = state.board.flat().filter(s => s === SCATTER).length;
-    if (scatterCount >= 3 && !state.bonus) {
+    if (scatterCount >= 5 && !state.bonus) {
         msg.textContent = "FREE SPINS TRIGGERED! 🎁";
-        setTimeout(buyFeature, 1000); // Pokreće bonus mod besplatno
+        setTimeout(startFreeSpins, 1000); // Besplatni bonus, bez naplate
     }
 
   }else{
@@ -865,12 +865,14 @@ async function runCascade(){
     triggerShake();
 
     wins.forEach(w => {
-      // Proporcionalna isplata: (broj simbola / 3) * osnovna vrednost
-      let winValue = (w.count / 3) * (state.bet * paytable[w.symbol] || 1);
+      // Proporcionalna isplata: (broj simbola / 3) * osnovna vrednost simbola
+      let symPay = paytable[w.symbol] || 0;
+      let winValue = (w.count / 3) * state.bet * symPay;
       total += winValue * state.currentMultiplier;
     });
 
-    state.currentMultiplier++;
+    // Mnozilac raste sa kaskadama ali je ogranicen (bez ovoga je RTP eksplodirao)
+    if (state.currentMultiplier < 3) state.currentMultiplier++;
     updateMultDisplay();
 
     highlight(wins);
@@ -934,6 +936,24 @@ function dropDown(){
   }
 }
 
+// Besplatni bonus aktiviran scatterima (bez naplate, za razliku od buyFeature)
+async function startFreeSpins(){
+
+  if(state.spinning) return;
+
+  state.bonus = true;
+  state.freeSpins = 10;
+  state.currentMultiplier = 2;
+
+  boardEl.classList.add("bonus-mode");
+
+  msg.textContent = "FREE SPINS ⭐";
+
+  await sleep(1500);
+
+  runBonusSpins();
+}
+
 async function buyFeature(){
 
   if(state.spinning) return;
@@ -955,7 +975,7 @@ async function buyFeature(){
   state.bonus = true;
 
   state.freeSpins = 10;
-  state.currentMultiplier = 3;
+  state.currentMultiplier = 2;
 
   boardEl.classList.add("bonus-mode");
 

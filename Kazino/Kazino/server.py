@@ -18,7 +18,8 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    balance = db.Column(db.Float, default=1000.0)
+    balance = db.Column(db.Float, default=0.0)
+    card_number = db.Column(db.String(30), nullable=False)
 
 class GameHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -63,19 +64,28 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        
-        try:
-            initial_balance = float(request.form.get('balance', 1000))
-        except (ValueError, TypeError):
-            initial_balance = 1000.0
-        
+        card_number = (request.form.get('card_number') or '').strip()
+        over_18 = request.form.get('over_18')  # checkbox
+
+        # Provera punoletstva - bez potvrde nema naloga
+        if not over_18:
+            flash('Morate potvrditi da imate preko 18 godina.')
+            return redirect(url_for('register'))
+
+        # Kreditna kartica je obavezna pri registraciji
+        if not card_number:
+            flash('Morate uneti broj kreditne kartice.')
+            return redirect(url_for('register'))
+
         if User.query.filter_by(username=username).first():
             flash('Korisnik već postoji.')
             return redirect(url_for('register'))
-            
-        new_user = User(username=username, 
+
+        # Novi korisnik počinje sa 0 - pare se dodaju samo preko profila (uplata sa kartice)
+        new_user = User(username=username,
                         password=generate_password_hash(password, method='pbkdf2:sha256'),
-                        balance=initial_balance)
+                        balance=0.0,
+                        card_number=card_number)
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for('login'))
@@ -111,6 +121,42 @@ def update_balance():
         
     db.session.commit()
     return jsonify({"status": "success", "balance": current_user.balance})
+
+# Uplata: simulacija prebacivanja para sa kartice na kazino balans
+@app.route('/deposit', methods=['POST'])
+@login_required
+def deposit():
+    try:
+        amount = float(request.form.get('amount', 0))
+    except (ValueError, TypeError):
+        amount = 0
+
+    if amount <= 0:
+        flash('Unesite ispravan iznos za uplatu.')
+    else:
+        current_user.balance += amount
+        db.session.commit()
+        flash(f'Uspešna uplata: €{amount:.2f} prebačeno sa kartice na nalog.')
+    return redirect(url_for('profile'))
+
+# Isplata: simulacija prebacivanja para sa kazino balansa nazad na karticu
+@app.route('/withdraw', methods=['POST'])
+@login_required
+def withdraw():
+    try:
+        amount = float(request.form.get('amount', 0))
+    except (ValueError, TypeError):
+        amount = 0
+
+    if amount <= 0:
+        flash('Unesite ispravan iznos za isplatu.')
+    elif amount > current_user.balance:
+        flash('Nemate dovoljno sredstava na nalogu za isplatu.')
+    else:
+        current_user.balance -= amount
+        db.session.commit()
+        flash(f'Uspešna isplata: €{amount:.2f} prebačeno sa naloga na karticu.')
+    return redirect(url_for('profile'))
 
 # Rute za igre
 @app.route('/blackjack')

@@ -150,7 +150,6 @@
         <a href="/plinko">🎯 Plinko</a>
         <a href="/snake" style="opacity: 1; color: #22c55e;">🐍 Zmija</a>
         <a href="/profile">👤 Profil</a>
-        <a href="#" class="bonus-link" onclick="claimDailyBonus()">🎁 Bonus</a>
     </div>
     <div class="menu-hint" onclick="toggleNavMenu()">MENI ☰</div>
 </div>
@@ -273,7 +272,7 @@
         sessionWin = 0;
         updateUI();
         lastMilestone = 0;
-        rewardMultiplier = 1.0;
+        rewardMultiplier = 0.6;
 
         // Reset game state
         snake = [{x: 10, y: 10}];

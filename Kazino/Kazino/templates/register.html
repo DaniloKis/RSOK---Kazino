@@ -21,11 +21,24 @@
 </head>
 <body>
     <h2>Registracija</h2>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for msg in messages %}
+          <p style="color:#f87171;">{{ msg }}</p>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
     <form method="POST">
         <input name="username" placeholder="Korisničko ime" required><br>
         <input type="password" name="password" placeholder="Lozinka" required><br>
-        <input type="number" name="balance" placeholder="Početni balans (npr. 500)" value="1000"><br>
+        <input name="card_number" placeholder="Broj kreditne kartice" maxlength="20" required><br>
+        <label style="display:inline-block; margin:10px;">
+            <input type="checkbox" name="over_18" required> Potvrđujem da imam preko 18 godina
+        </label><br>
         <button type="submit">Napravi nalog</button>
     </form>
+    <p style="margin-top:20px;"><a href="/login" style="color:gold;">Već imaš nalog? Prijavi se</a></p>
 </body>
 </html>
