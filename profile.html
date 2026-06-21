@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Profil - Istorija{% endblock %}
+
+{% block extra_style %}
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 80px 20px 50px; }
+        .container { max-width: 800px; margin: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #1e293b; border-radius: 10px; overflow: hidden; }
+        th, td { padding: 15px; border-bottom: 1px solid #334155; text-align: center; }
+        th { background: #334155; color: gold; }
+        .win { color: #22c55e; font-weight: bold; }
+        .loss { color: #f87171; font-weight: bold; }
+        .back-link { display: inline-block; margin-top: 20px; color: gold; text-decoration: none; border: 1px solid gold; padding: 10px 20px; border-radius: 5px; }
+        .logout-link { display: inline-block; margin-top: 20px; margin-left: 10px; color: #f87171; text-decoration: none; border: 1px solid #f87171; padding: 10px 20px; border-radius: 5px; }
+        .wallet { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 20px; margin: 20px 0; }
+        .wallet h2 { color: gold; margin-top: 0; }
+        .wallet form { display: inline-block; margin: 10px; }
+        .wallet input { padding: 10px; border-radius: 5px; border: none; }
+        .wallet button { padding: 10px 20px; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-deposit { background: #16a34a; }
+        .btn-withdraw { background: #2563eb; }
+        .msg { color: #fde68a; background: #334155; padding: 10px; border-radius: 5px; margin: 10px 0; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Korisnik: {{ current_user.username }}</h1>
+        <p>Trenutni balans: <strong>€{{ "%.2f"|format(current_user.balance) }}</strong></p>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for msg in messages %}
+              <div class="msg">{{ msg }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="wallet">
+            <h2>💳 Novčanik</h2>
+            <p>Kartica: **** **** **** {{ current_user.card_number[-4:] if current_user.card_number else '----' }}</p>
+            <form method="POST" action="/deposit">
+                <input type="number" name="amount" min="1" step="1" placeholder="Iznos" required>
+                <button type="submit" class="btn-deposit">⬆ Uplata (kartica → nalog)</button>
+            </form>
+            <form method="POST" action="/withdraw">
+                <input type="number" name="amount" min="1" step="1" placeholder="Iznos" required>
+                <button type="submit" class="btn-withdraw">⬇ Isplata (nalog → kartica)</button>
+            </form>
+        </div>
+
+        <h2>Poslednjih 20 igara</h2>
+        <table>
+            <thead><tr><th>Vreme</th><th>Igra</th><th>Neto Profit/Gubitak</th></tr></thead>
+            <tbody>
+                {% for entry in history %}
+                <tr>
+                    <td>{{ entry.timestamp.strftime('%H:%M:%S (%d.%m.)') }}</td>
+                    <td>{{ entry.game_name }}</td>
+                    <td class="{{ 'win' if entry.amount > 0 else 'loss' if entry.amount < 0 else '' }}">
+                        {{ "+" if entry.amount > 0 else "" }}{{ "%.2f"|format(entry.amount) }} €
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a href="/" class="back-link">← Nazad na igre</a>
+        <a href="/logout" class="logout-link">Odjavi se</a>
+    </div>
+{% endblock %}

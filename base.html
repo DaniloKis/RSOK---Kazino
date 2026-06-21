@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Casino{% endblock %}</title>
+    <style>
+        /* Zajednički stilovi za navigaciju */
+        .nav-container { position: fixed; top: -60px; left: 0; width: 100%; z-index: 1002; transition: top 0.3s ease; }
+        .nav-container.open { top: 0; }
+        .nav-bar { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); padding: 15px; display: flex; justify-content: center; gap: 20px; border-bottom: 1px solid gold; }
+        .menu-hint { position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); background: gold; color: black; padding: 5px 20px; border-radius: 0 0 10px 10px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .nav-bar a { color: white; text-decoration: none; font-weight: bold; opacity: 0.7; transition: 0.3s; }
+        .nav-bar a:hover { opacity: 1; color: gold; }
+
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+    </style>
+    {% block extra_style %}{% endblock %}
+</head>
+<body>
+    <div class="nav-container">
+        <div class="nav-bar">
+            <a href="/">🏠 Home</a>
+            <a href="/blackjack">🃏 Blackjack</a>
+            <a href="/rulet">🎡 Rulet</a>
+            <a href="/slot">🎰 Slot</a>
+            <a href="/plinko">🎯 Plinko</a>
+            <a href="/snake">🐍 Zmija</a>
+            <a href="/profile">👤 Profil</a>
+        </div>
+        <div class="menu-hint" onclick="toggleNavMenu()">MENI ☰</div>
+    </div>
+
+    {% block content %}{% endblock %}
+
+    <script>
+        function toggleNavMenu() {
+            document.querySelector('.nav-container').classList.toggle('open');
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
