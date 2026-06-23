@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Casino Home{% endblock %}
+{% block title %}Kazino — Početna{% endblock %}
 
 {% block extra_style %}
     <style>
@@ -19,7 +19,7 @@
 {% block content %}
     <h1>Dobrodošli, {{ current_user.username }}!</h1>
     <div class="balance-info">Vaš balans: €{{ "%.2f"|format(current_user.balance) }}</div>
-    <p><a href="/profile" style="color: gold; font-size: 18px;">👤 Profil I Istorija</a></p>
+    <p><a href="/profile" style="color: gold; font-size: 18px;">👤 Vidi moj profil i istoriju</a></p>
 
     <div class="leaderboard">
         <h3>🏆 Top Igrači</h3>
@@ -38,4 +38,8 @@
         <a href="{{ url_for('plinko') }}" class="card">🎯 Plinko</a>
         <a href="{{ url_for('snake') }}" class="card">🐍 Zmija</a>
     </div>
+
+    <footer style="margin-top:40px; padding:20px; color:#64748b; font-size:14px;">
+        © 2026 Danilo Kiš · Seminarski rad · Igraj odgovorno (18+)
+    </footer>
 {% endblock %}

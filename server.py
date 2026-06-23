@@ -1,4 +1,10 @@
-# app.py
+"""
+Kazino - Flask web aplikacija online kazina.
+
+Sadrzi registraciju/prijavu korisnika, novcanik (uplata/isplata),
+balans i istoriju igara, kao i rute za igre (Blackjack, Slot, Rulet, Plinko, Zmija).
+Pokretanje: python server.py  ->  http://127.0.0.1:5001
+"""
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -6,7 +12,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'casino-secret-key-123'
+# Tajni kljuc se cita iz okruzenja (sa fallback-om za lokalni razvoj)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'casino-secret-key-123')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///casino.db'
 
 db = SQLAlchemy(app)
@@ -15,6 +22,7 @@ login_manager.login_view = 'login'
 login_manager.init_app(app)
 
 class User(UserMixin, db.Model):
+    """Korisnik kazina: kredencijali, balans i broj kartice."""
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
@@ -22,6 +30,7 @@ class User(UserMixin, db.Model):
     card_number = db.Column(db.String(30), nullable=False)
 
 class GameHistory(db.Model):
+    """Jedan zapis u istoriji igara (dobitak ili gubitak po rundi)."""
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     game_name = db.Column(db.String(100), nullable=False)
@@ -49,6 +58,7 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Prijava korisnika - proverava korisnicko ime i heširanu lozinku."""
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -93,6 +103,7 @@ def register():
 
 @app.route('/logout')
 def logout():
+    """Odjava trenutnog korisnika."""
     logout_user()
     return redirect(url_for('login'))
 
